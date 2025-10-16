@@ -1,60 +1,68 @@
-
-name: Flask CI/CD
+name: Flask CI/CD with Artifacts
 
 on:
   push:
-    branches:
-      - ft/*
-      - dev
+    branches: ["dev", "ft/*"]
   pull_request:
-    branches:
-      - main
-      - dev
-      - ft/*
+    branches: ["dev", "main"]
 
 jobs:
+  # Step 1: Build & Test
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.9"
 
-      # Step 3: Install dependencies
       - name: Install dependencies
-        run: |
-          pip install flask
+        run: pip install flask
 
-      # Step 4: Run Flask app test (starts server for check)
-      - name: Run Flask app
+      - name: Run Flask test
         run: |
           python app.py &
           sleep 5
           curl -I http://127.0.0.1:5000
 
-  docker:
+      - name: Build Docker image
+        run: docker build -t flask-ci-app .
+
+      - name: Save Docker image to tar
+        run: docker save flask-ci-app -o flask-ci-app.tar
+
+      - name: Upload Docker image as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flask-app-image
+          path: flask-ci-app.tar
+
+      # Step 2: Deploy
+  deploy:
     runs-on: ubuntu-latest
     needs: build
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flask-app-image
 
-      - name: Build Docker image
-        run: docker build -t python-flask-ci .
+      - name: Load Docker image 
+        run: docker load -i flask-ci-app.tar
 
-      - name: Run container
+      - name: Deploy Docker container
         run: |
-          docker run -d -p 5000:5000 --name flask-app python-flask-ci
-          sleep 5
-          curl -I http://127.0.0.1:5000
+          docker run flask-ci-app || true
+          docker rm flask-ci-app || true
+          docker run -d -p 5000:5000 --name flask-ci-app flask-ci-app
+
+
+
+
 
 
 
