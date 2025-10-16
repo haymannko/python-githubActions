@@ -4,12 +4,13 @@ name: Flask CI/CD
 on:
   push:
     branches:
-      - main
+      - ft/*
       - dev
   pull_request:
     branches:
       - main
       - dev
+      - ft/*
 
 jobs:
   build:
