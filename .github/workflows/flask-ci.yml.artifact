@@ -57,7 +57,7 @@ jobs:
 
       - name: Run Docker container in Background
         run: |
-          docker run -d -p 5000:5000 --name flask-ci-app flask-app-image:latest
+          docker run -d -p 5000:5000 --name flask-ci-app flask-ci-app
           sleep 5
           docker ps
           echo "✅ Flask container started successfully."
